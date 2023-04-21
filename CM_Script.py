@@ -1,10 +1,20 @@
 #- - - - - - - - - - - - - - -  Import required modules/packages/dependencies- - - - - - - - - - - - - - - - - - - - - _
-import pandas as pd
+%matplotlib inline
+import cartopy
+import os
 import geopandas as gpd
+import matplotlib.pyplot as plt
+from cartopy.feature import ShapelyFeature
+import cartopy.crs as ccrs
+import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
+import pandas as pd
 import folium
 import ipywidgets
 from IPython.display import HTML, display
- 
+
+plt.ion()  # make the plotting interactive
+
 #- - - - - - - - - - - - - - -  Add initial data- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - -
 # This adds the bike locations we will be working with 
 locations = ("https://www.belfastcity.gov.uk/getmedia/f68a4e53-68df-429c-8ac8-a8be9411ab73/belfast-bike-stations-updated-25-june-2021.csv")
