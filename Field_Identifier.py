@@ -55,7 +55,7 @@ outline = gpd.read_file(os.path.abspath('data_files/NI_outline.shp')) # load the
 # This adds the bike locations we will be working with
 locations = ("https://www.belfastcity.gov.uk/getmedia/f68a4e53-68df-429c-8ac8-a8be9411ab73/belfast-bike-stations-updated-25-june-2021.csv")
 bike_station_locations= pd.read_csv(locations)# csv data is now a dataframe
-#TODO: convert to geodataframe
+
 
 #TODO: add additional layers
 
