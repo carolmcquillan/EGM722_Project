@@ -1,4 +1,5 @@
-name:  EGM722_Project_Carol
+name:  722Assignment_Carol
+channels:
   - conda-forge
   - defaults
 dependencies:
