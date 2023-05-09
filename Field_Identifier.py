@@ -1,4 +1,6 @@
-##################################################### ALL ASSIs in NI###########################################################from cartopy.feature import ShapelyFeature
+#Import the required modules
+import sys
+
 from cartopy.feature import ShapelyFeature
 import cartopy.crs as ccrs
 import cartopy
@@ -10,7 +12,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 
-################################################# New functions ############################################################
+#Add new functions
 
 # This "assign_Area_Length" function assigns area in km2 and length in meters to any geodataframe
 def assign_Area_Length(gdf):
@@ -21,7 +23,7 @@ def assign_Area_Length(gdf):
         gdf.loc[ind, 'Length_m'] = row['geometry'].length  # assign the row's geometry length to a new column, Length
 
 
-#This scale_bar function adds a scale bar to the output map :--------------------------------------------------------------------------------   
+#This scale_bar function adds a scale bar to the output map:
 def scale_bar(ax, location=(0.1, 0.05)):
     x0, x1, y0, y1 = ax.get_extent()
     sbx = x0 + (x1 - x0) * location[0]
@@ -39,26 +41,40 @@ def scale_bar(ax, location=(0.1, 0.05)):
     ax.text(sbx-9750, sby-4500, '1', transform=ax.projection, fontsize=6)# should be 11250 but doesn't place well
     ax.text(sbx-12500, sby-4500, '0', transform=ax.projection, fontsize=6)# add the scale bar to the axis
 
-# Essential User Input
-#first ask for user input to select an ASSI to investigate
-print("Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
-Selected_ASSI = input()
+
+# Ask for essential user input:
+#first ask for user to input ASSI name to be investigated
+
+Selected_ASSI = input("Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
 
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
-#TODO: verify the input name is valid
-# if Selected_ASSI in ASSI.columns.values:
-#    pass
-#else:
-#    print("You must input a valid ASSI name.  Please check your spelling.  A complete list of ASSI names is provided in the accompanying README document")
 
+count=0
+while count < 2:
+    try:
+        if Selected_ASSI in ASSI.NAME.values or Selected_ASSI =='All':
+            print('This is a valid choice')
+            break
+        elif Selected_ASSI not in ASSI.NAME.values:
+            print('\nThis is an invalid choice. Please try again.')
+            Selected_ASSI = input("Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
+            count += 1
+    except ValueError:
+        print("only text input allowed")
+
+if count == 2: print('\n\n\n\nProgramme quitting due to invalid user input.............................'
+                     '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
+
+
+
+#TODO: verify the input distance is valid
 #then ask user to determine the buffer distance to be used
-print("Specify a buffer distance in kilometers (whole number only):")
-Dist_km_str = input()
+Dist_km_str = input("\n\nSpecify a buffer distance in kilometers (no decimals or commas allowed):" )
 Dist_km_int = int(Dist_km_str)
 Dist_m_int = Dist_km_int*1000
 
 
-################################################# # adding and work with the ASSI data ############################################################
+# adding and work with the ASSI data #
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
 assign_Area_Length(ASSI) #apply user created function to assign lenght and area to gdf
 ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY','DECLARE_HA',
@@ -314,10 +330,14 @@ with open(OutputName + "_Results.txt", "a") as f:
 
 print('The script has run successfully and created the following files:')
 print('1 x Map File (png format)')
-print('1 x Text File (txt format)')
 print('1 x Workbook Map Output (xlsx format)')
 
-if Selected_ASSI == "All":
-    print('2 x Spatial File Outputs (shp format)')
-else:
+if Selected_ASSI != "an ASSI":
     print('3 x Spatial File Outputs (shp format)')
+else  Selected_ASSI == "an ASSI":
+    print('2 x Spatial File Outputs (shp format)')  #"an ASSI" is the current value if the user input 'ALL' at the start
+
+print('1 x Text File (txt format)')
+
+
+print(Selected_ASSI)
