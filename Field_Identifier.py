@@ -49,6 +49,7 @@ Selected_ASSI = input("Enter the name of ASSI to investigate, or enter \'All\' f
 
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
 
+
 count=0
 while count < 2:
     try:
@@ -66,13 +67,13 @@ if count == 2: print('\n\n\n\nProgramme quitting due to invalid user input......
                      '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
 
 
-
-#TODO: verify the input distance is valid
 #then ask user to determine the buffer distance to be used
 Dist_km_str = input("\n\nSpecify a buffer distance in kilometers (no decimals or commas allowed):" )
+#TODO: Verify user input is a keyboard number
+print('\n\nData processing in progress.....................')
+
 Dist_km_int = int(Dist_km_str)
 Dist_m_int = Dist_km_int*1000
-
 
 # adding and work with the ASSI data #
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
@@ -334,10 +335,8 @@ print('1 x Workbook Map Output (xlsx format)')
 
 if Selected_ASSI != "an ASSI":
     print('3 x Spatial File Outputs (shp format)')
-else  Selected_ASSI == "an ASSI":
+else:
     print('2 x Spatial File Outputs (shp format)')  #"an ASSI" is the current value if the user input 'ALL' at the start
 
 print('1 x Text File (txt format)')
 
-
-print(Selected_ASSI)
