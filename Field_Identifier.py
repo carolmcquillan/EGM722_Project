@@ -1,18 +1,18 @@
 #Import the required modules
-import sys
 
-from cartopy.feature import ShapelyFeature
-import cartopy.crs as ccrs
 import cartopy
+import cartopy.crs as ccrs
+from cartopy.feature import ShapelyFeature
 import geopandas as gpd
-import pandas as pd
-import openpyxl
-import os
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib_scalebar.scalebar import ScaleBar
+import openpyxl
+import os
+import pandas as pd
+from shapely.geometry.point import Point
+#import sys
 
-
-#Add new functions
 
 # This "assign_Area_Length" function assigns area in km2 and length in meters to any geodataframe
 def assign_Area_Length(gdf):
@@ -24,7 +24,15 @@ def assign_Area_Length(gdf):
 
 
 #This scale_bar function adds a scale bar to the output map:
-def scale_bar(ax, location=(0.1, 0.05)):
+def scale_bar1():
+    points = gpd.GeoSeries([Point(53.5, 6.5), Point(54.5, 6.5)], crs=2157)
+    points = points.to_crs(2157)  # Projected to my crs
+    distance_meters = points[0].distance(
+        points[1])  # ( the distance between the two point above, which will be used to generate the scale bar)
+    ax.add_artist(ScaleBar(distance_meters, box_color="none", location="lower left"))
+
+
+def scale_bar2(ax, location=(0.1, 0.05)):
     x0, x1, y0, y1 = ax.get_extent()
     sbx = x0 + (x1 - x0) * location[0]
     sby = y0 + (y1 - y0) * location[1]
@@ -137,8 +145,6 @@ xmin, ymin, xmax, ymax = ASSI.total_bounds #then get this dataset bounds and set
 mapExtent = ax.set_extent([xmin-Dist_m_int-6500, xmax+Dist_m_int+6500, ymin-Dist_m_int-6500, ymax+Dist_m_int+6500], crs=myCRS)
 
 
-
-
 #add towns  to give additional context
 towns = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/egm722_Practicals/egm722/week2/data_files/Towns.shp'))
 towns.to_crs(epsg=2157, inplace=True)
@@ -205,11 +211,11 @@ ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
    
 #-----------------------------add a title and scalebar:--------------------------------------------------------------------------------    --
 if Selected_ASSI!='All':
-     ax.set_title("Fields within/partially within " + str(Dist_km_int)+ "km of "+ Selected_ASSI +" ASSI")
+     ax.set_title("Fields Within/Partially Within " + str(Dist_km_int)+ "km of "+ Selected_ASSI +" ASSI")
+     scale_bar1()
 else:
-     ax.set_title("Fields within/partially within " + str(Dist_km_int)+ "km of an ASSI")
-     scale_bar(ax)
-
+     ax.set_title("Fields Within/Partially Within " + str(Dist_km_int)+ "km of an Area of Special Scientific Interest(ASSI)")
+     scale_bar2(ax)
 ################################################Create a map legend############################################################-
 
 # generate a list of handles for the ASSI datasets
@@ -333,7 +339,7 @@ print('The script has run successfully and created the following files:')
 print('1 x Map File (png format)')
 print('1 x Workbook Map Output (xlsx format)')
 
-if Selected_ASSI != "an ASSI":
+if Selected_ASSI != " an ASSI":
     print('3 x Spatial File Outputs (shp format)')
 else:
     print('2 x Spatial File Outputs (shp format)')  #"an ASSI" is the current value if the user input 'ALL' at the start
