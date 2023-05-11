@@ -1,5 +1,4 @@
 #Import the required modules
-
 import cartopy
 import cartopy.crs as ccrs
 from cartopy.feature import ShapelyFeature
@@ -14,11 +13,13 @@ from shapely.geometry.point import Point
 #import sys
 
 
+#Before we proceed, we'll set the CRS that we shall be working within-in this case- Universal Transverse Mercator
+myCRS = ccrs.epsg(2157)
+
 # This "assign_Area_Length" function assigns area in km2 and length in meters to any geodataframe
 def assign_Area_Length(gdf):
     for ind, row in gdf.iterrows(): # iterate over each row in the GeoDataFrame
         gdf.loc[ind, 'Area_km2'] = row['geometry'].area / 1000000 # assign the row's geometry length to a new column, Area
-    
     for ind, row in gdf.iterrows(): # iterate over each row in the GeoDataFrame
         gdf.loc[ind, 'Length_m'] = row['geometry'].length  # assign the row's geometry length to a new column, Length
 
@@ -27,250 +28,253 @@ def assign_Area_Length(gdf):
 def scale_bar1():
     points = gpd.GeoSeries([Point(53.5, 6.5), Point(54.5, 6.5)], crs=2157)
     points = points.to_crs(2157)  # Projected to my crs
-    distance_meters = points[0].distance(
-        points[1])  # ( the distance between the two point above, which will be used to generate the scale bar)
-    ax.add_artist(ScaleBar(distance_meters, box_color="none", location="lower left"))
+    distance_meters = points[0].distance(points[1])  # ( the distance between the two point above, which will be used to generate the scale bar)
+    ax.add_artist(ScaleBar(distance_meters, box_color="none", location="lower right"))
 
 
-def scale_bar2(ax, location=(0.1, 0.05)):
+def scale_bar2(ax, location=(0.99, 0.035)):
     x0, x1, y0, y1 = ax.get_extent()
     sbx = x0 + (x1 - x0) * location[0]
     sby = y0 + (y1 - y0) * location[1]
-    #sbx = x0 + (x1 - x0) * location[0]
-    #sby = y0 + (y1 - y0) * location[1]
 
-    ax.plot([sbx, sbx - 10000], [sby, sby], color='k', linewidth=7, transform=ax.projection)
-    ax.plot([sbx, sbx - 5000], [sby, sby], color='k', linewidth=6, transform=ax.projection)
-    ax.plot([sbx-5000, sbx - 10000], [sby, sby], color='w', linewidth=6, transform=ax.projection)
-    ax.plot([sbx-9000, sbx - 10000], [sby, sby], color='k', linewidth=6, transform=ax.projection)
+    ax.plot([sbx - 30000, sbx], [sby, sby], color='k', linewidth=5, transform=ax.projection)
+    ax.plot([sbx - 30000, sbx], [sby, sby], color='w', linewidth=5, transform=ax.projection)
+    ax.plot([sbx - 25000, sbx], [sby, sby], color='k', linewidth=5, transform=ax.projection)
+    ax.plot([sbx - 20000, sbx], [sby, sby], color='w', linewidth=5, transform=ax.projection)
+    ax.plot([sbx - 10000, sbx], [sby, sby], color='k', linewidth=5, transform=ax.projection)
 
-    ax.text(sbx, sby-4500, '10 km', transform=ax.projection, fontsize=6)
-    ax.text(sbx-5250, sby-4500, '5', transform=ax.projection, fontsize=6)#should be 6250 but doesn't place well
-    ax.text(sbx-9750, sby-4500, '1', transform=ax.projection, fontsize=6)# should be 11250 but doesn't place well
-    ax.text(sbx-12500, sby-4500, '0', transform=ax.projection, fontsize=6)# add the scale bar to the axis
+
+    ax.text(sbx -22000, sby +3500, "Kilometres", fontsize=8, transform=myCRS)   #add the scale bar labels to the axis
+    ax.text(sbx-1200, sby-4500, '30', transform=ax.projection, fontsize=6)      # exact positions do not
+    ax.text(sbx -12000, sby - 4500, '20', transform=ax.projection, fontsize=6)  # place well on map
+    ax.text(sbx -22000, sby - 4500, '10', transform=ax.projection, fontsize=6)  # so numbers have been placed
+    ax.text(sbx-26500, sby-4500, '5', transform=ax.projection, fontsize=6)      # in best display positions
+    ax.text(sbx-32000, sby-4500, '0', transform=ax.projection, fontsize=6)
 
 
 # Ask for essential user input:
-#first ask for user to input ASSI name to be investigated
+#First ask for user to input ASSI name to be investigated
 
-Selected_ASSI = input("Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
+Selected_ASSI = input("\n\nEnter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
+#TODO: Work with ASSI Name in lower case
 
+
+#To check a valid value has been input, first add the geodataframe need to perform this check
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
 
 
+#Check and give user 3 attempts to make valid input
 count=0
-while count < 2:
+while count < 3:
     try:
-        if Selected_ASSI in ASSI.NAME.values or Selected_ASSI =='All':
-            print('This is a valid choice')
+        if (Selected_ASSI in ASSI.NAME.values) or (Selected_ASSI =='All'):
+            print( '\n\nGood Choice! Let\'s investigate '+Selected_ASSI )
             break
         elif Selected_ASSI not in ASSI.NAME.values:
-            print('\nThis is an invalid choice. Please try again.')
+            print('\nThis is an invalid choice. Please try again......')
             Selected_ASSI = input("Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
             count += 1
     except ValueError:
-        print("only text input allowed")
+        print("Only text input allowed")
 
-if count == 2: print('\n\n\n\nProgramme quitting due to invalid user input.............................'
+if count == 3: print('\n\n\n\nProgramme quitting due to invalid user input.............................'
                      '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
 
 
-#then ask user to determine the buffer distance to be used
-Dist_km_str = input("\n\nSpecify a buffer distance in kilometers (no decimals or commas allowed):" )
-#TODO: Verify user input is a keyboard number
-print('\n\nData processing in progress.....................')
-
+#Next, ask user to determine the buffer distance to be used
+Dist_km_str = input("\n\nSpecify a buffer distance in kilometers (no decimals or commas permitted):" )
+#TODO: Verify user input is a keyboard number and give 3 chances for valid input
 Dist_km_int = int(Dist_km_str)
 Dist_m_int = Dist_km_int*1000
 
-# adding and work with the ASSI data #
-ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
-assign_Area_Length(ASSI) #apply user created function to assign lenght and area to gdf
-ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY','DECLARE_HA',
-                  'GIS_AREA', 'GIS_LENGTH', 'PARTIES', 'Shape_STAr', 'Shape_STLe', 'Hyperlink'], axis=1)    #Drop unneccessary fields
 
-newASSIorder = ['OBJECTID','geometry', 'REFERENCE',  'NAME', 'COUNTY', 'SPECIESPT1', 'SPECIESPT2', #Create new order for columns
+#Provide user  update
+print('\n\nCreating a {} km buffer around {}'.format(Dist_km_str, Selected_ASSI))
+
+
+# Now, we're working with the ASSI data which was added above:
+assign_Area_Length(ASSI) #first- apply this user created function to assign length and area to gdf
+
+ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY','DECLARE_HA',                    #Dropping unneccessary fields
+                  'GIS_AREA', 'GIS_LENGTH', 'PARTIES', 'Shape_STAr', 'Shape_STLe', 'Hyperlink'], axis=1)
+
+newASSIorder = ['OBJECTID','geometry', 'REFERENCE',  'NAME', 'COUNTY', 'SPECIESPT1', 'SPECIESPT2',        #Creating new column order
                   'HABITAT', 'EARTH_SCI', 'Area_km2', 'Length_m']                   
-ASSI= ASSI.reindex(columns=newASSIorder)                                                           #Apply new order for columns
+ASSI= ASSI.reindex(columns=newASSIorder)                                                                  #Applying new order to gdf
 
+
+#To have the valid data in our ASSI gdf,
 if Selected_ASSI=='All':
-    ASSI= ASSI
-else:
-    ASSI = ASSI.loc[ASSI['NAME'] == Selected_ASSI]
-    
-################################################# # adding and work with the Field data ############################################################
-#Add first Agri dataset(inc. Field ID's and geometry)
+    ASSI= ASSI                                                                     # ASSI gdf contains all rows as requested by user
+else:                                                                              # or (depending on the user input)
+    ASSI = ASSI.loc[ASSI['NAME'] == Selected_ASSI]                                 # ASSI gdf now only contains row of the selected ASSI
+
+
+#Next, we're adding and working with the Agricultural Field and Animal Count data
+#Add first Agri dataset(this includes Field ID's and geometry)
 AgFields = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project/data_files/AgFields.shp')) # add Agricultural fields data
-AgFields.to_crs(epsg=2157, inplace=True)
-assign_Area_Length(AgFields)             #apply user created function to assign length and area to gdf
-newAgFieldsorder = ['geometry', 'FieldID',  'Hectares', 'Area_km2', 'Length_m', 'X_COORD', 'Y_COORD']  #Create new order for columns
-                                       
-AgFields= AgFields.reindex(columns=newAgFieldsorder)   
+AgFields.to_crs(epsg=2157, inplace=True)                                                                 #assigning the crs to the gdf
+assign_Area_Length(AgFields)                                             #applying user created function to assign length and area to gdf
+newAgFieldsorder = ['geometry', 'FieldID',  'Hectares', 'Area_km2', 'Length_m', 'X_COORD', 'Y_COORD']    #creating new order for columns
+AgFields= AgFields.reindex(columns=newAgFieldsorder)                                                     #applying new column order to the gdf
 
-#Add second Agri dataset (inc.Field ID's and animal counts)
-FieldInfo =  pd.read_excel(os.path.abspath('C:/Carol_PG_CERT_GIS/EGM722_Project/data_files/FieldInfo.xlsx')) #Add in excel table to join data
 
-#join FieldInfo (pandas dataframe) onto the AgFields(geopandas dataframe)
+#Adding second Agricultural dataset (this is non-spatial , athough includes Field ID's (to be used as a join field) and also has animal counts)
+FieldInfo =  pd.read_excel(os.path.abspath('C:/Carol_PG_CERT_GIS/EGM722_Project/data_files/FieldInfo.xlsx')) #Add in excel table
+
+
+#Now joining FieldInfo (pandas dataframe) onto the AgFields(geopandas dataframe)
 AgFields = AgFields.merge(FieldInfo, on='FieldID', how='left')
 AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1) # drop unrequired columns
+print('\nJoining data.....................')
 
+#Underting initial spatial analysis to create a buffer of the selected ASSI(s) (we'll be buffering by the user defined distance from above)
+ASSI_buffer = ASSI.copy()                               #first- made a copy of the current ASSI gdf (this may be 1 feature or all-depending on user's choice)
+ASSI_buffer.geometry = ASSI.geometry.buffer(Dist_m_int) #This is where a buffer of the ASSI(s) is created- based upon the user selected Buffer Distance
+ASSI_buffer_dis = ASSI_buffer.dissolve()                #This dissolves the features in the the ASSI_buffer gdf to create new 'ASSI_buffer_dis' gdf
+print('\nSpatial buffering in progress.....................')
+print('\nDissolving polygons...............................')
 
-
-#################Initial spatial analysis to create a user defined buffer of all ASSIs ###########################
-
-ASSI_buffer = ASSI.copy()
-ASSI_buffer.geometry = ASSI.geometry.buffer(Dist_m_int) #create a buffer of ALL ASSIs based upon the User selected Buffer Distance
-ASSI_buffer_dis = ASSI_buffer.dissolve()
-
-
-################################################### overlay fields with buffer ###################################################
-FieldsInBuf = gpd.sjoin(AgFields,ASSI_buffer_dis,how='inner',predicate='intersects',) 
-
+#Now we'll overlay agriculural fields with the dissolved buffer and spatially join the records
+#AgFields.crs == ASSI_buffer_dis.crs                    #always check the crs of gdfs being processed together are the same
+FieldsInBuf = gpd.sjoin(AgFields,ASSI_buffer_dis,how='inner',predicate='intersects')  #uses intersect method- can also change to 'within' if needed
+print('\nSpatial join in progress..........................')                         #if changing to within- you will also need to update the title
  
-######################## Create output map to show ASSI, Buffer extent and Fields within Buffer extent ########################
+#Now, we're creating an output map to show ASSI(s), Buffer area and Agricultural Fields:
+myFig = plt.figure(figsize=(10, 10)) # creating figure of size 10x10 (representing the page size in inches)
+ax = plt.axes(projection=myCRS)      # creating an axes object in the figure (within which the data shall be plotted), using the predefined crs
+
+# first, we set the map extent:
+xmin, ymin, xmax, ymax = ASSI.total_bounds #Here, the bounding co-ords of the ASSI dataset are set against the axes extent
+if Selected_ASSI != 'All':                 #The axes extent will vary, depending upon whether the user chose to investigate
+    mapExtent = ax.set_extent(             #a single ASSI or all.
+        [xmin - Dist_m_int - 2500, xmax + Dist_m_int + 2500, ymin - Dist_m_int - 2500, ymax + Dist_m_int + 2500],
+        crs=myCRS)                         #If we're investigating a single ASSI, this will zoom the map just outside of the
+else:                                      #buffered area
+    mapExtent = ax.set_extent(
+        [xmin - 2500, xmax + 2500, ymin - 2500, ymax + 2500], #Or if we're investigating ALL ASSI's, this will focus map
+        crs=myCRS)                                            # at a Northern Ireland level( just outside the ASSI extent)
 
 
-# create the applicable CRS -in this case- Universal Transverse Mercator reference system- to transform the data
-myCRS = ccrs.epsg(2157)
-
-
-# create a figure of size 10x10 (representing the page size in inches)
-myFig = plt.figure(figsize=(10, 10)) 
-
-# create an axes object in the figure (within which the data shall be plotted), using the predefined crs
-ax = plt.axes(projection=myCRS)  
-
-# first, we set the map extent
-xmin, ymin, xmax, ymax = ASSI.total_bounds #then get this dataset bounds and set them against the axes extent '
-mapExtent = ax.set_extent([xmin-Dist_m_int-6500, xmax+Dist_m_int+6500, ymin-Dist_m_int-6500, ymax+Dist_m_int+6500], crs=myCRS)
-
-
-#add towns  to give additional context
-towns = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/egm722_Practicals/egm722/week2/data_files/Towns.shp'))
-towns.to_crs(epsg=2157, inplace=True)
-
-###- - - - - - - - - - - - - - -  Add background features to map (for aesthetic/contest setting purposes only) - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - -
-if Selected_ASSI!='All':
-     pass
-else:
-    ax.add_feature(cartopy.feature.OCEAN)
-    ax.add_feature(cartopy.feature.LAND)
-    town_handle = ax.plot(towns.geometry.x, towns.geometry.y, 's', color='0.5', ms=6, transform=myCRS) # to add the town point data to map and create town handle for legend:
-    # add the text labels for the towns
+# Add background and labels to enhance the map:
+if Selected_ASSI=='All':       # add background features to NI scale map produced for 'All' ASSI's- for aesthetic/context setting purposes only
+    ax.add_feature(cartopy.feature.OCEAN)                                                  #adding oceans for background
+    ax.add_feature(cartopy.feature.LAND)                                                   #adding land for background
+    towns = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/egm722_Practicals/egm722/week2/data_files/Towns.shp'))
+    towns.to_crs(epsg=2157, inplace=True)                           # adding towns data to give additional context- (crs specified)
+    city_handle = ax.plot(towns.loc[towns['TOWN_NAME'] == 'Belfast'].geometry.x,    #adding legend handles for City and Towns
+                          towns.loc[towns['TOWN_NAME'] == 'Belfast'].geometry.y, 'o', color='r', ms=6, transform=myCRS)
+    town_handle = ax.plot(towns.loc[towns['TOWN_NAME'] != 'Belfast'].geometry.x,
+                          towns.loc[towns['TOWN_NAME'] != 'Belfast'].geometry.y, 's', color='0.5', ms=6, transform=myCRS)
+    #next we're adding the text labels for the towns and cities (all are stored within the towns gdf)
     for ind, row in towns.iterrows():  # towns.iterrows() returns the index and row
-         x, y = row.geometry.x, row.geometry.y  # get the x,y location for each town
-         ax.text(x, y, row['TOWN_NAME'].title(), fontsize=8, transform=myCRS)  # use plt.text to place a label at x,y
-    
-###- - - - - - - - - - - - - - -  Add required data to the map- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -- - - -
+            x, y = row.geometry.x, row.geometry.y  # get the x,y location for each town
+            ax.text(x, y, row['TOWN_NAME'].title(), fontsize=8, transform=myCRS)  # use plt.text to place a label at x,y
 
-#Create Shapely features to add to the map:
+
+else:     #we'll not add a background to a larger scale map, because it's not accurate enoughl
+          #However here we'll label the ASSI
+    ASSI["x"] = ASSI.centroid.map(
+              lambda p: p.x)  # so first we need to get x,y co-ords and assign these positions to be used by labels
+    ASSI["y"] = ASSI.centroid.map(lambda p: p.y)
+    for ind, row in ASSI.loc[ASSI['NAME'] == Selected_ASSI].iterrows():  # ASSI.iterrows() returns the index and row
+             x, y = row.x, row.y  # get the x,y location for each ASSI (created using lambda above)
+             ax.text(x, y, row['NAME'].title(), fontsize=8, color ='red', transform=myCRS)  # use plt.text to place a label at x,y
+
+
+
+#Next, we're creating Shapely features for Agri. Fields, ASSI's, the dissolved buffer feature and Fields that fall within the buffer
+#so that we can add the data in the geodataframes to the map:
 AgFields_feature = ShapelyFeature(AgFields['geometry'], myCRS, edgecolor='w', facecolor='lightgrey', linewidth=0.3)
 ASSI_feature = ShapelyFeature(ASSI['geometry'], myCRS, edgecolor='none', facecolor='lightgreen', linewidth=1)
 FieldsInBuf_feature = ShapelyFeature(FieldsInBuf['geometry'], myCRS, edgecolor='yellow', facecolor='none', linewidth=1)
 ASSI_buffer_feature = ShapelyFeature(ASSI_buffer_dis['geometry'], myCRS, edgecolor='red', facecolor='none', hatch='xxx', alpha=0.2, linewidth=1)
 
 
-#Add Shapely features to the map:
+#Now we're adding the Shapely features created above, to the map:
 ax.add_feature(AgFields_feature)               # add the Field data to map
 ax.add_feature(ASSI_feature)                   # add the ASSI data to map
 ax.add_feature(FieldsInBuf_feature)            # add the Selected Field data to map
 ax.add_feature(ASSI_buffer_feature)            # add selected ASSI 3km Buffer to map:
-   
 
 
-#add ASSI label to map-
-if Selected_ASSI=='All':    #too many to add,if looking at all (there are 394!)
-     pass
-else:                                           
-    ASSI["x"] = ASSI.centroid.map(lambda p: p.x) #this first requires x,yco-ords to be assigned to the feature(s)
-    ASSI["y"] = ASSI.centroid.map(lambda p: p.y)
-    for ind, row in ASSI.loc[ASSI['NAME'] == Selected_ASSI].iterrows():  # ASSI.iterrows() returns the index and row
-        x, y = row.x, row.y  # get the x,y location for each town
-    ax.text(x, y, row['NAME'].title(), fontsize=8, color ='red', transform=myCRS)  # use plt.text to place a label at x,y
-
-#-----------------------------------------add gridlines:-----------------------------------------------------------------------
-
+#AAdd gridlines to the map:
 gridlines = ax.gridlines(draw_labels=True,  # draw  labels for the grid lines
                          xlocs=[-8, -7.5, -7, -6.5, -6, -5.5],  # add longitude lines at 0.5 deg intervals
-                         ylocs=[54, 54.5, 55, 55.5])  # add latitude lines at 0.5 deg intervals
+                         ylocs=[54, 54.5, 55, 55.5],            # add latitude lines at 0.5 deg intervals
+                         linestyle='--')                        # define the linestyle
 gridlines.right_labels = False  # turn off the left-side labels
 gridlines.top_labels = False  # turn off the bottom labels
 gridlines.left_labels = True  # turn on the left-side labels
 gridlines.bottom_labels = True  # turn on the bottom labels
 
 
-#-----------------------------add a north arrow:----------------------------------------------------------------------------------
-
-x, y, arrow_length = 0.93, 0.1, 0.075
-ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),
-            arrowprops=dict(facecolor="black", width=3.5, headwidth=15),
+#Add a north arrow to the map:
+x, y, arrow_length = 0.07, 0.1, 0.075                                       #Here we're specifying the x,y position and
+ax.annotate('N', xy=(x, y), xytext=(x, y-arrow_length),                     #height of arrow and here we're specifiying
+            arrowprops=dict(facecolor="black", width=3.5, headwidth=15),    #what and how the text should appear
             ha='center', va='center', fontsize=15,
             xycoords=ax.transAxes)
 
 
-   
-#-----------------------------add a title and scalebar:--------------------------------------------------------------------------------    --
-if Selected_ASSI!='All':
+#Add a title and scalebar:                                                  #We have a standard scalebar for a selected
+if Selected_ASSI!='All':                                                    #ASSI and a special scalebar for All ASSI's!
      ax.set_title("Fields Within/Partially Within " + str(Dist_km_int)+ "km of "+ Selected_ASSI +" ASSI")
      scale_bar1()
 else:
      ax.set_title("Fields Within/Partially Within " + str(Dist_km_int)+ "km of an Area of Special Scientific Interest(ASSI)")
      scale_bar2(ax)
-################################################Create a map legend############################################################-
 
-# generate a list of handles for the ASSI datasets
-ASSI_handles = [mpatches.Rectangle((0, 0), 1, 1, facecolor='lightgreen', edgecolor='lightgreen')]
+
+#Now we'll generate handles for the legend:
+ASSI_handles = [mpatches.Rectangle((0, 0), 1, 1, facecolor='lightgreen', edgecolor='lightgreen')] # generate handles for legend
 ASSI_buffer_handles = [mpatches.Rectangle((0, 0), 1, 1, facecolor='none', edgecolor='red', hatch='xxx', alpha=0.2, linewidth=1)]
 AgField_handles = [mpatches.Rectangle((0, 0), 1, 1, facecolor='lightgrey', edgecolor='w')]
 FieldsInBuf_handles = [mpatches.Rectangle((0, 0), 1, 1, facecolor='lightgrey', edgecolor='yellow')]
 
 
-if Selected_ASSI!='All':
+#Now create the legend for the map:
+if Selected_ASSI!='All':                                #We won't include the Town and City symbols on a Selected ASSI map
     handles = ASSI_handles + ASSI_buffer_handles+  AgField_handles +FieldsInBuf_handles
     labels = ['ASSI', (str(Dist_km_int))+'km Buffer','Field','Field Inside']
-else:
-    handles =  town_handle +  ASSI_handles + ASSI_buffer_handles+  AgField_handles +FieldsInBuf_handles
-    labels = ['Town', 'ASSI', (str(Dist_km_int))+'km Buffer','Field','Field Inside']
 
+else:                                                  #We will include the Town and City symbols on a NI scale map
+    handles =  town_handle + city_handle + ASSI_handles + ASSI_buffer_handles+  AgField_handles +FieldsInBuf_handles
+    labels = ['Town', 'City', 'ASSI', (str(Dist_km_int))+'km Buffer','Field','Field Inside']
 
-leg = ax.legend(handles, labels, title='Legend', title_fontsize=12,
+leg = ax.legend(handles, labels, title='Legend', title_fontsize=12,                     #Now add the legend to the map
                 fontsize=10, loc='upper left', frameon=True, framealpha=1)
 
 
-#-----------------------------outputName:--------------------------------------------------------------------------------    --
-#First To create a relevant filename (based on ASSI Reference) to use for saving ma, excel and shapefile outputs, first
-ASSICode = str(FieldsInBuf.REFERENCE.unique())
-ASSICode = ASSICode.replace("[", "")
-ASSICode = ASSICode.replace("]", "")
-ASSICode = ASSICode.replace("'","")
 
+#Let's create a name that we can use and re-use for our various outputs (including map, excel and shapefile outputs)
+#First to create a relevant filename (based on ASSI Reference number which is in the gdf) we need to remove some characters
+ASSICode = str(FieldsInBuf.REFERENCE.unique())
+ASSICode = ASSICode.replace("[", "")                                                    #replacing [ with no character
+ASSICode = ASSICode.replace("]", "")                                                    #replacing ] with no character
+ASSICode = ASSICode.replace("'","")                                                     #replacing ' with no character
 
 if Selected_ASSI!='All':
-   OutputName =ASSICode+"_"+ str(Dist_km_int)+ "km_" + Selected_ASSI  #then use the ASSICode to create the prefix name for any output:
+   OutputName =ASSICode+"_"+ str(Dist_km_int)+ "km_" + Selected_ASSI  #then use the ASSICode, to create the prefix name for any output
 else:
-   OutputName ="ALL_ASSI"+ str(Dist_km_int)+ "km" #then use the ASSICode to create the prefix name for any output:
- 
+   OutputName ="ALL_ASSI"+ str(Dist_km_int)+ "km"        #then use "ALL_ASSI" text, to create the prefix name for any output
 
-#------------------------save the map, tabular and spatial output, to xlsx, png and shp respectively: ---------------------------------------------------------------------------------
+
+
+#Now appy the naming convention from above to save the map:
 myFig.savefig(OutputName+'_map.png', dpi=300, bbox_inches='tight')
-print('Saving map image to ............'+str(OutputName)+'_map.png')
+print('\nExporting output map to ............'+str(OutputName)+'_map.png')
 
 
 #Drop unrequired fields before exporting to excel
-xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REFERENCE', 'NAME', 'COUNTY', 'SPECIESPT1', 'SPECIESPT2', 'HABITAT', 'EARTH_SCI', 'Area_km2_right', 'Length_m_right'], axis=1)
+xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REFERENCE', 'NAME', 'COUNTY', 'SPECIESPT1',
+                                     'SPECIESPT2', 'HABITAT', 'EARTH_SCI', 'Area_km2_right', 'Length_m_right'], axis=1)
 xlsx_FieldOutput= xlsx_FieldOutput.rename(columns={'Area_km2_left': 'Area_km2', 'Length_m_left': 'Length_m'})
 xlsx_FieldOutput.to_excel(OutputName+"_Fields.xlsx") # exports the features to an excel file for future use (if required)
-print('Saving tabular data to..........' +str(OutputName) +"_Fields.xlsx")
-FieldsInBuf.to_file(OutputName+"_Fields.shp")
-print('Saving spatial data to..........' +str(OutputName) +"_Fields.shp")
-ASSI_buffer.to_file(OutputName+"_Buffer.shp")
-print('Saving spatial data to..........' +str(OutputName) +"_Buffer.shp")
+print('\nExporting Field records to..........' +str(OutputName) +"_Fields.xlsx")
 
-if Selected_ASSI=='All':
-   pass
-else:
-    ASSI.to_file(ASSICode+ '_' +Selected_ASSI+"_ASSI.shp")
-    print("Saving spatial data to.........."+ ASSICode+ '_' +Selected_ASSI+"_ASSI.shp")
+
+
 
 
 #--------------------------------------Output stats to All text file------------------------------------------------------------------------
@@ -306,7 +310,7 @@ if Selected_ASSI =="All":
 else:
     pass
     
-print('Saving summary data to..........' +str(OutputName) + "_Results.txt")
+print('\nExporting Descriptive Statistical data to..........' +str(OutputName) + "_Results.txt")
 
 with open(OutputName + "_Results.txt", "a") as f:
   print(OutputName + " Results ", file=f)
@@ -335,14 +339,32 @@ with open(OutputName + "_Results.txt", "a") as f:
   print(FieldsInBuf.describe(),file=f)
 
 
-print('The script has run successfully and created the following files:')
-print('1 x Map File (png format)')
-print('1 x Workbook Map Output (xlsx format)')
+
+ASSI_buffer.to_file(OutputName+"_Buffer.shp")
+print('\nExporting shapefile to..........' +str(OutputName) +"_Buffer.shp")
+
+FieldsInBuf.to_file(OutputName+"_Fields.shp")
+print('\nExporting shapefile to..........' +str(OutputName) +"_Fields.shp")
+
+if Selected_ASSI=='All':
+   pass
+else:
+    ASSI.to_file(ASSICode+ '_' +Selected_ASSI+"_ASSI.shp")
+    print("\nExporting shapefile to.........."+ ASSICode+ '_' +Selected_ASSI+"_ASSI.shp")
+
+
+
+print('\n\n\nThe script has run successfully and created the following files:')
+print('\n1 x Map Output File (png format)')
+print('\n1 x Text File (txt format)')
+print('\n1 x Data Table (xlsx format)')
 
 if Selected_ASSI != " an ASSI":
-    print('3 x Spatial File Outputs (shp format)')
+    print('\n3 x Spatial File Outputs (shp format)')
 else:
-    print('2 x Spatial File Outputs (shp format)')  #"an ASSI" is the current value if the user input 'ALL' at the start
+    print('\n2 x Spatial File Outputs (shp format)')  #"an ASSI" is now Benburb
+    # the current value if the user input 'ALL' at the start
 
-print('1 x Text File (txt format)')
+
+
 
