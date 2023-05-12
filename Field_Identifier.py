@@ -15,16 +15,16 @@ from shapely.geometry.point import Point
 # import sys
 
 
-# Before we proceed, we'll set the CRS that we shall be working within-in this case- Universal Transverse Mercator
+# Before we proceed, we'll set the CRS that we shall be working with: Universal Transverse Mercator
 myCRS = ccrs.epsg(2157)
 
 
 # This "assign_Area_Length" function assigns area in km2 and length in meters to any geodataframe
 
-def assign_Area_Length(gdf):
+def assign_area_length(gdf):
     for ind, row in gdf.iterrows():  # iterate over each row in the GeoDataFrame
         gdf.loc[ind, 'Area_km2'] = row[
-                                       'geometry'].area / 1000000  # assign the row's geometry length to a new column, Area
+                                       'geometry'].area / 1000000  # assign the row's geometry length to a new column
     for ind, row in gdf.iterrows():  # iterate over each row in the GeoDataFrame
         gdf.loc[ind, 'Length_m'] = row['geometry'].length  # assign the row's geometry length to a new column, Length
 
@@ -33,8 +33,8 @@ def assign_Area_Length(gdf):
 def scale_bar1():
     points = gpd.GeoSeries([Point(53.5, 6.5), Point(54.5, 6.5)], crs=2157)
     points = points.to_crs(2157)  # Projected to my crs
-    distance_meters = points[0].distance(points[1])  # ( the distance between the two point above,
-    # which will be used to generate the scale bar)
+    distance_meters = points[0].distance(points[1])             #  the distance between the 2 point above
+                                                                # which will be used to generate the scale bar
     ax.add_artist(ScaleBar(distance_meters, box_color="none", location="lower right"))
 
 
@@ -67,7 +67,7 @@ Selected_ASSI = input(Fore.LIGHTGREEN_EX + "\n\nEnter the name of ASSI to invest
 
 # To check a valid value has been input, first add the geodataframe need to perform this check
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
-
+ASSI.to_excel("ASSI.xlsx")
 # Check and give user 3 attempts to make valid input
 count = 0
 while count < 2:
@@ -78,14 +78,14 @@ while count < 2:
         elif Selected_ASSI not in ASSI.NAME.values:
             print(Fore.RED + '\nThis is an invalid choice. Please try again......')
             Selected_ASSI = input(
-                Fore.LIGHTGREEN_EX + "Enter the name of ASSI to investigate, or enter \'All\' for a Northern Ireland level overview:")
+                Fore.LIGHTGREEN_EX + "Enter the name of ASSI to investigate, "
+                                     "or enter \'All\' for a Northern Ireland level overview:")
             count += 1
     except ValueError:
         print(Fore.LIGHTGREEN_EX + "Only text input allowed")
 
 if count == 2: print(Fore.RED + '\n\n\n\nProgramme quitting due to invalid user input.............................'
-                                '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(
-    0)
+                     '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
 
 # Next, ask user to determine the buffer distance to be used
 Dist_km_str = input(
@@ -98,9 +98,9 @@ Dist_m_int = Dist_km_int * 1000
 print(Fore.LIGHTWHITE_EX + '\n\nCreating a {} km buffer around {}'.format(Dist_km_str, Selected_ASSI))
 
 # Now, we're working with the ASSI data which was added above:
-assign_Area_Length(ASSI)  # first- apply this user created function to assign length and area to gdf
+assign_area_length(ASSI)  # first, apply this user created function to assign length and area to gdf
 
-ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY', 'DECLARE_HA',  # Dropping unneccessary fields
+ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY', 'DECLARE_HA',  # Dropping fields not needed
                   'GIS_AREA', 'GIS_LENGTH', 'PARTIES', 'Shape_STAr', 'Shape_STLe', 'Hyperlink'], axis=1)
 
 newASSIorder = ['OBJECTID', 'geometry', 'REFERENCE', 'NAME', 'COUNTY', 'SPECIESPT1', 'SPECIESPT2',
@@ -115,59 +115,62 @@ else:  # or (depending on the user input)
     ASSI = ASSI.loc[ASSI['NAME'] == Selected_ASSI]  # ASSI gdf now only contains row of the selected ASSI
 
 # Next, we're adding and working with the Agricultural Field and Animal Count data
-# Add first Agri dataset(this includes Field ID's and geometry)
+# Add first Agricultural Fields dataset(this includes Field ID's and geometry)
 AgFields = gpd.read_file(
     os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project/data_files/AgFields.shp'))  # add Agricultural fields data
 AgFields.to_crs(epsg=2157, inplace=True)  # assigning the crs to the gdf
-assign_Area_Length(AgFields)  # applying user created function to assign length and area to gdf
+assign_area_length(AgFields)  # applying user created function to assign length and area to gdf
 newAgFieldsorder = ['geometry', 'FieldID', 'Hectares', 'Area_km2', 'Length_m', 'X_COORD',
                     'Y_COORD']  # creating new order for columns
 AgFields = AgFields.reindex(columns=newAgFieldsorder)  # applying new column order to the gdf
 
-# Adding second Agricultural dataset (this is non-spatial , athough includes Field ID's (to be used as a join field) and also has animal counts)
+# Adding second Agricultural dataset (this is non-spatial, it includes Field IDs
+# which will be used as a join field and also includes animal counts
 FieldInfo = pd.read_excel(
     os.path.abspath('C:/Carol_PG_CERT_GIS/EGM722_Project/data_files/FieldInfo.xlsx'))  # Add in Excel table
 
 # Now joining FieldInfo (pandas dataframe) onto the AgFields(geopandas dataframe)
 AgFields = AgFields.merge(FieldInfo, on='FieldID', how='left')
-AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1)  # drop unrequired columns
+AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1)  # drop unneeded columns
 print('\nJoining data.....................')
 
-# Underting initial spatial analysis to create a buffer of the selected ASSI(s) (we'll be buffering by the user defined
-# distance from above)
-ASSI_buffer = ASSI.copy()  # first- made a copy of the current ASSI gdf (this may be 1 feature or all-depending on user's choice)
+# Undertaking initial spatial analysis to create a buffer of the selected ASSI(s)
+# we'll be buffering by the user defined  distance from above
+ASSI_buffer = ASSI.copy()                                   # first, made a copy of the current ASSI gdf
+                                                            # (this may be 1 feature or all-depending on user's choice)
 ASSI_buffer.geometry = ASSI.geometry.buffer(
-    Dist_m_int)  # This is where a buffer of the ASSI(s) is created- based upon the user selected Buffer Distance
-ASSI_buffer_dis = ASSI_buffer.dissolve()  # This dissolves the features in the the ASSI_buffer gdf to create new 'ASSI_buffer_dis' gdf
+    Dist_m_int)  # This is where a buffer of the ASSI(s) is created.  It is based upon the user selected Buffer Distance
+ASSI_buffer_dis = ASSI_buffer.dissolve()                    # This dissolves the features in the ASSI_buffer gdf
+                                                            # to create new 'ASSI_buffer_dis' gdf
 print('\nSpatial buffering in progress.....................')
 print('\nDissolving polygons...............................')
 
-# Now we'll overlay agriculural fields with the dissolved buffer and spatially join the records
-# AgFields.crs == ASSI_buffer_dis.crs                    #always check the crs of gdfs being processed together are the same
+# Now we'll overlay agricultural fields with the dissolved buffer and spatially join the records
+#AgFields.crs == ASSI_buffer_dis.crs                    #checking the crs of gdfs being processed  are the same
 FieldsInBuf = gpd.sjoin(AgFields, ASSI_buffer_dis, how='inner',
-                        predicate='intersects')  # uses intersect method- can also change to 'within' if needed
+                        predicate='intersects')  # uses intersect method, though can be changed to 'within' if needed
 print(
-    '\nSpatial join in progress..........................')  # if changing to within- you will also need to update the title
+    '\nSpatial join in progress..........................')  # if changing to within, will also need to update the title
 
 # Now, we're creating an output map to show ASSI(s), Buffer area and Agricultural Fields:
 myFig = plt.figure(figsize=(10, 10))  # creating figure of size 10x10 (representing the page size in inches)
 ax = plt.axes(
-    projection=myCRS)  # creating an axes object in the figure (within which the data shall be plotted), using the predefined crs
+    projection=myCRS)  # creating axes object in the figure (within which data shall be plotted), using predefined crs
 
 # first, we set the map extent:
-xmin, ymin, xmax, ymax = ASSI.total_bounds  # Here, the bounding co-ords of the ASSI dataset are set against the axes extent
+xmin, ymin, xmax, ymax = ASSI.total_bounds  # Bounding co-ords of the ASSI dataset are set against the axes extent
 if Selected_ASSI != 'All':  # The axes extent will vary, depending upon whether the user chose to investigate
     mapExtent = ax.set_extent(  # a single ASSI or all.
         [xmin - Dist_m_int - 2500, xmax + Dist_m_int + 2500, ymin - Dist_m_int - 2500, ymax + Dist_m_int + 2500],
-        crs=myCRS)  # If we're investigating a single ASSI, this will zoom the map just outside of the
-else:  # buffered area
+        crs=myCRS)  # If we're investigating a single ASSI, this will zoom the map just outside of the buffer zone
+else:
     mapExtent = ax.set_extent(
         [xmin - 2500, xmax + 2500, ymin - 2500, ymax + 2500],
         # Or if we're investigating ALL ASSI's, this will focus map
         crs=myCRS)  # at a Northern Ireland level( just outside the ASSI extent)
 
 # Add background and labels to enhance the map:
-if Selected_ASSI == 'All':  # add background features to NI scale map produced for 'All' ASSI's- for aesthetic/context setting purposes only
+if Selected_ASSI == 'All':  # add background features to NI scale map for aesthetic/context setting purposes only
     ax.add_feature(cartopy.feature.OCEAN)  # adding oceans for background
     ax.add_feature(cartopy.feature.LAND)  # adding land for background
     towns = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/egm722_Practicals/egm722/week2/data_files/Towns.shp'))
@@ -184,7 +187,7 @@ if Selected_ASSI == 'All':  # add background features to NI scale map produced f
         ax.text(x, y, row['TOWN_NAME'].title(), fontsize=8, transform=myCRS)  # use plt.text to place a label at x,y
 
 
-else:  # we'll not add a background to a larger scale map, because it's not accurate enoughl
+else:  # we'll not add a background to a larger scale map, because it's not accurate enough
     # However here we'll label the ASSI
     ASSI["x"] = ASSI.centroid.map(
         lambda p: p.x)  # so first we need to get x,y co-ords and assign these positions to be used by labels
@@ -194,8 +197,8 @@ else:  # we'll not add a background to a larger scale map, because it's not accu
         ax.text(x, y, row['NAME'].title(), fontsize=8, color='red',
                 transform=myCRS)  # use plt.text to place a label at x,y
 
-# Next, we're creating Shapely features for Agri. Fields, ASSI's, the dissolved buffer feature and Fields that fall within the buffer
-# so that we can add the data in the geodataframes to the map:
+# Next, we're creating Shapely features for Fields, ASSI's, the dissolved buffer feature and Fields that
+# fall within the buffer so that we can add the data in the geodataframes to the map:
 AgFields_feature = ShapelyFeature(AgFields['geometry'], myCRS, edgecolor='w', facecolor='lightgrey', linewidth=0.3)
 ASSI_feature = ShapelyFeature(ASSI['geometry'], myCRS, edgecolor='none', facecolor='lightgreen', linewidth=1)
 FieldsInBuf_feature = ShapelyFeature(FieldsInBuf['geometry'], myCRS, edgecolor='yellow', facecolor='none', linewidth=1)
@@ -220,8 +223,8 @@ gridlines.bottom_labels = True  # turn on the bottom labels
 
 # Add a north arrow to the map:
 x, y, arrow_length = 0.07, 0.1, 0.075  # Here we're specifying the x,y position and
-ax.annotate('N', xy=(x, y), xytext=(x, y - arrow_length),  # height of arrow and here we're specifiying
-            arrowprops=dict(facecolor="black", width=3.5, headwidth=15),  # what and how the text should appear
+ax.annotate('N', xy=(x, y), xytext=(x, y - arrow_length),                   # height of arrow and here we're specifying
+            arrowprops=dict(facecolor="black", width=3.5, headwidth=15),    # what and how the text should appear
             ha='center', va='center', fontsize=15,
             xycoords=ax.transAxes)
 
@@ -255,7 +258,7 @@ leg = ax.legend(handles, labels, title='Legend', title_fontsize=12,  # Now add t
                 fontsize=10, loc='upper left', frameon=True, framealpha=1)
 
 # Let's create a name that we can use and re-use for our various outputs (including map, excel and shapefile outputs)
-# First to create a relevant filename (based on ASSI Reference number which is in the gdf) we need to remove some characters
+# First to create a relevant filename (based on ASSI Reference number) we need to remove some characters
 ASSICode = str(FieldsInBuf.REFERENCE.unique())
 ASSICode = ASSICode.replace("[", "")  # replacing [ with no character
 ASSICode = ASSICode.replace("]", "")  # replacing ] with no character
@@ -271,12 +274,12 @@ else:  # or
 myFig.savefig(OutputName + '_map.png', dpi=300, bbox_inches='tight')
 print('\nExporting output map to ............' + str(OutputName) + '_map.png')
 
-# Dropping unrequired fields before exporting to excel
+# Dropping fields that are not required before, exporting to Excel
 xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REFERENCE', 'NAME', 'COUNTY', 'SPECIESPT1',
                                      'SPECIESPT2', 'HABITAT', 'EARTH_SCI', 'Area_km2_right', 'Length_m_right'], axis=1)
 xlsx_FieldOutput = xlsx_FieldOutput.rename(columns={'Area_km2_left': 'Area_km2', 'Length_m_left': 'Length_m'})
 xlsx_FieldOutput.to_excel(
-    OutputName + "_Fields.xlsx")  # exports the features to an excel file for future use (if required)
+    OutputName + "_Fields.xlsx")  # exports the features to an Excel file for future use (if required)
 print('\nExporting Field records to..........' + str(OutputName) + "_Fields.xlsx")
 
 # Creating Descriptive stats to text file
@@ -304,7 +307,7 @@ percentPoultryHouses = totalPoultryHouses / NIPoultryHouseCount * 100
 
 AvPigCount = FieldsInBuf['Pig_Count'].mean()
 AvCattleCount = FieldsInBuf['Cattle_Count'].mean()
-AvPoultyHouses = FieldsInBuf['PoultryHouses'].mean()
+AvPoultryHouses = FieldsInBuf['PoultryHouses'].mean()
 
 if Selected_ASSI == "All":
     Selected_ASSI = " an ASSI"
@@ -339,7 +342,7 @@ with open(OutputName + "_Results.txt", "a") as f:
     print("Mean number of cattle in fields within/ partially within " + str(
         Dist_km_int) + "km of " + Selected_ASSI + ":                  {:.0f} cattle".format(AvCattleCount), file=f)
     print("Mean number of poultry houses in fields within/ partially within " + str(
-        Dist_km_int) + "km of " + Selected_ASSI + ":           {:.0f} poultry houses\n\n\n\n".format(AvPoultyHouses),
+        Dist_km_int) + "km of " + Selected_ASSI + ":           {:.0f} poultry houses\n\n\n\n".format(AvPoultryHouses),
           file=f)
     print("Descriptive Statistics for fields within " + str(Dist_km_int) + "km", file=f)
     print(" ", file=f)
@@ -367,5 +370,6 @@ print('\n1 x Data Table (xlsx format)')
 if Selected_ASSI != " an ASSI":
     print('\n3 x Spatial File Outputs (shp format)')
 else:
-    print('\n2 x Spatial File Outputs (shp format)')  # "an ASSI" is now Benburb
+    print('\n2 x Spatial File Outputs (shp format\n\n\n\n)')  # "an ASSI" is now Benburb
     # the current value if the user input 'ALL' at the start
+print("\n\n\n ")
