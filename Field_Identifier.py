@@ -56,7 +56,8 @@ def scale_bar2(ax, location=(0.99, 0.035)):
     ax.text(sbx - 26500, sby - 4500, '5', transform=ax.projection, fontsize=6)  # in best display positions
     ax.text(sbx - 32000, sby - 4500, '0', transform=ax.projection, fontsize=6)
 
-
+# The steps referred to in the script from here on in, correspond to the steps set out in the User Guide
+# STEP 1:
 # Ask for essential user input:
 # First ask for user to input ASSI name to be investigated
 
@@ -87,7 +88,7 @@ while count < 2:
 if count == 2: print(Fore.RED + '\n\n\n\nProgramme quitting due to invalid user input.............................'
                      '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
 
-# Next, ask user to determine the buffer distance to be used
+# Step 2: Ask for user to define the buffer distance
 Dist_km_str = input(
     Fore.LIGHTGREEN_EX + "\n\nSpecify a buffer distance in kilometers (no decimals or commas permitted):")
 # TODO: Verify user input is a keyboard number and give 3 chances for valid input
@@ -97,7 +98,7 @@ Dist_m_int = Dist_km_int * 1000
 # Provide user  update
 print(Fore.LIGHTWHITE_EX + '\n\nCreating a {} km buffer around {}'.format(Dist_km_str, Selected_ASSI))
 
-# Now, we're working with the ASSI data which was added above:
+# Step 3: Work with tht ASSI data - Now, we're working with the ASSI data which was added above:
 assign_area_length(ASSI)  # first, apply this user created function to assign length and area to gdf
 
 ASSI = ASSI.drop(['MAP_SCALE', 'CONFIRMDAY', 'CONFIRM_HA', 'DECLAREDAY', 'DECLARE_HA',  # Dropping fields not needed
@@ -114,7 +115,7 @@ if Selected_ASSI == 'All':
 else:  # or (depending on the user input)
     ASSI = ASSI.loc[ASSI['NAME'] == Selected_ASSI]  # ASSI gdf now only contains row of the selected ASSI
 
-# Next, we're adding and working with the Agricultural Field and Animal Count data
+# Step 4: Work with the Agricultural Field and Livestock data
 # Add first Agricultural Fields dataset(this includes Field ID's and geometry)
 AgFields = gpd.read_file(
     os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project/data_files/AgFields.shp'))  # add Agricultural fields data
@@ -124,7 +125,7 @@ newAgFieldsorder = ['geometry', 'FieldID', 'Hectares', 'Area_km2', 'Length_m', '
                     'Y_COORD']  # creating new order for columns
 AgFields = AgFields.reindex(columns=newAgFieldsorder)  # applying new column order to the gdf
 
-# Adding second Agricultural dataset (this is non-spatial, it includes Field IDs
+# Adding second Agricultural dataset (Livestock numbes- this is non-spatial, it includes Field IDs
 # which will be used as a join field and also includes animal counts
 FieldInfo = pd.read_excel(
     os.path.abspath('C:/Carol_PG_CERT_GIS/EGM722_Project/data_files/FieldInfo.xlsx'))  # Add in Excel table
@@ -134,7 +135,8 @@ AgFields = AgFields.merge(FieldInfo, on='FieldID', how='left')
 AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1)  # drop unneeded columns
 print('\nJoining data.....................')
 
-# Undertaking initial spatial analysis to create a buffer of the selected ASSI(s)
+# Step 5: Buffering ASSI(s)
+# Here we are Undertaking initial spatial analysis to create a buffer of the selected ASSI(s)
 # we'll be buffering by the user defined  distance from above
 ASSI_buffer = ASSI.copy()                                   # first, made a copy of the current ASSI gdf
                                                             # (this may be 1 feature or all-depending on user's choice)
@@ -145,13 +147,15 @@ ASSI_buffer_dis = ASSI_buffer.dissolve()                    # This dissolves the
 print('\nSpatial buffering in progress.....................')
 print('\nDissolving polygons...............................')
 
-# Now we'll overlay agricultural fields with the dissolved buffer and spatially join the records
+# Step 6: Performing spatial join on Fields and ASSI(s)
+# by overlaying agricultural fields with the dissolved buffer to spatially join the records
 # AgFields.crs == ASSI_buffer_dis.crs                    #checking the crs of gdfs being processed  are the same
 FieldsInBuf = gpd.sjoin(AgFields, ASSI_buffer_dis, how='inner',
                         predicate='intersects')  # uses intersect method, though can be changed to 'within' if needed
 print(
     '\nSpatial join in progress..........................')  # if changing to within, will also need to update the title
 
+# Step 7: Creating output map for spatial visualisation of results
 # Now, we're creating an output map to show ASSI(s), Buffer area and Agricultural Fields:
 myFig = plt.figure(figsize=(10, 10))  # creating figure of size 10x10 (representing the page size in inches)
 ax = plt.axes(
@@ -274,6 +278,7 @@ else:  # or
 myFig.savefig(OutputName + '_map.png', dpi=300, bbox_inches='tight')
 print('\nExporting output map to ............' + str(OutputName) + '_map.png')
 
+# Step 8: Exporting Field records to excel
 # Dropping fields that are not required before, exporting to Excel
 xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REFERENCE', 'NAME', 'COUNTY', 'SPECIESPT1',
                                      'SPECIESPT2', 'HABITAT', 'EARTH_SCI', 'Area_km2_right', 'Length_m_right'], axis=1)
@@ -283,7 +288,9 @@ xlsx_FieldOutput.to_excel(
 print('\nExporting Field records to..........' + str(OutputName) + "_Fields.xlsx")    # this informs the user on-screen
                                                                               # that we're saving field records to Excel
 
-# Creating Descriptive stats to text file
+# Step 9: Creating Descriptive statistics to export to text file
+# first we create the variable required
+
 # Field Info
 total_Area = AgFields.area.sum() / 1000000                                                # Calculating stats for Fields
 total_Area_inside = FieldsInBuf.area.sum() / 1000000
@@ -310,14 +317,16 @@ AvPigCount = FieldsInBuf['Pig_Count'].mean()
 AvCattleCount = FieldsInBuf['Cattle_Count'].mean()
 AvPoultryHouses = FieldsInBuf['PoultryHouses'].mean()
 
+#then we rename the Selected_ASSI variable, so that all out priont statements make sense
 if Selected_ASSI == "All":
     Selected_ASSI = " an ASSI"
 else:
     pass
 
-#Next, we let the user know that we are going to export Field and Animal stats to a results text file
+# Next, we let the user know that we are going to export Field and Animal stats to a results text file
 print('\nExporting Descriptive Statistical data to..........' + str(OutputName) + "_Results.txt")
 
+# and now export the results to the text file
 with open(OutputName + "_Results.txt", "a") as f:
     print(OutputName + " Results \n\n", file=f)
     print("Field Info:", file=f)
@@ -351,6 +360,7 @@ with open(OutputName + "_Results.txt", "a") as f:
     print(FieldsInBuf.describe(), file=f)
 # TODO: Add Summary ASSI data eg area to the above output
 
+#Step 10: Exporting geodataframes to shapefiles
 #Next, we let the user know that we are going to export various datasets to shapefile
 ASSI_buffer.to_file(OutputName + "_Buffer.shp")
 print('\nExporting shapefile to..........' + str(OutputName) + "_Buffer.shp")
