@@ -146,7 +146,7 @@ print('\nSpatial buffering in progress.....................')
 print('\nDissolving polygons...............................')
 
 # Now we'll overlay agricultural fields with the dissolved buffer and spatially join the records
-#AgFields.crs == ASSI_buffer_dis.crs                    #checking the crs of gdfs being processed  are the same
+# AgFields.crs == ASSI_buffer_dis.crs                    #checking the crs of gdfs being processed  are the same
 FieldsInBuf = gpd.sjoin(AgFields, ASSI_buffer_dis, how='inner',
                         predicate='intersects')  # uses intersect method, though can be changed to 'within' if needed
 print(
@@ -280,19 +280,20 @@ xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REF
 xlsx_FieldOutput = xlsx_FieldOutput.rename(columns={'Area_km2_left': 'Area_km2', 'Length_m_left': 'Length_m'})
 xlsx_FieldOutput.to_excel(
     OutputName + "_Fields.xlsx")  # exports the features to an Excel file for future use (if required)
-print('\nExporting Field records to..........' + str(OutputName) + "_Fields.xlsx")
+print('\nExporting Field records to..........' + str(OutputName) + "_Fields.xlsx")    # this informs the user on-screen
+                                                                              # that we're saving field records to Excel
 
 # Creating Descriptive stats to text file
 # Field Info
-total_Area = AgFields.area.sum() / 1000000  # Total area of all fields
-total_Area_inside = FieldsInBuf.area.sum() / 1000000  # total area of fields falling within the BUFFER
-total_Area_outside = total_Area - total_Area_inside  # total area of fields falling outside the BUFFER
+total_Area = AgFields.area.sum() / 1000000                                                # Calculating stats for Fields
+total_Area_inside = FieldsInBuf.area.sum() / 1000000
+total_Area_outside = total_Area - total_Area_inside
 
 percentAllFields = total_Area / total_Area * 100
 percentFieldsInside = total_Area_inside / total_Area * 100
 percentFieldsOutside = 100 - percentFieldsInside
 
-# Animal Info
+# Animal Info                                                                            # Calculating stats for Animals
 NIPigCount = FieldInfo['Pig_Count'].sum()
 NICattleCount = FieldInfo['Cattle_Count'].sum()
 NIPoultryHouseCount = FieldInfo['PoultryHouses'].sum()
@@ -314,6 +315,7 @@ if Selected_ASSI == "All":
 else:
     pass
 
+#Next, we let the user know that we are going to export Field and Animal stats to a results text file
 print('\nExporting Descriptive Statistical data to..........' + str(OutputName) + "_Results.txt")
 
 with open(OutputName + "_Results.txt", "a") as f:
@@ -344,24 +346,26 @@ with open(OutputName + "_Results.txt", "a") as f:
     print("Mean number of poultry houses in fields within/ partially within " + str(
         Dist_km_int) + "km of " + Selected_ASSI + ":           {:.0f} poultry houses\n\n\n\n".format(AvPoultryHouses),
           file=f)
-    print("Descriptive Statistics for fields within " + str(Dist_km_int) + "km", file=f)
-    print(" ", file=f)
+    print("Descriptive Statistics for fields within " + str(Dist_km_int) + "km\n", file=f)
+
     print(FieldsInBuf.describe(), file=f)
 # TODO: Add Summary ASSI data eg area to the above output
 
-
+#Next, we let the user know that we are going to export various datasets to shapefile
 ASSI_buffer.to_file(OutputName + "_Buffer.shp")
 print('\nExporting shapefile to..........' + str(OutputName) + "_Buffer.shp")
 
 FieldsInBuf.to_file(OutputName + "_Fields.shp")
 print('\nExporting shapefile to..........' + str(OutputName) + "_Fields.shp")
 
-if Selected_ASSI == ' an ASSI':
+if Selected_ASSI == ' an ASSI':                      # this section ensures we don't create a shp containing all ASSI's
     pass
 else:
     ASSI.to_file(ASSICode + '_' + Selected_ASSI + "_ASSI.shp")
     print("\nExporting shapefile to.........." + ASSICode + '_' + Selected_ASSI + "_ASSI.shp")
 
+
+# Here the users receives a final summary message on screen
 print(Fore.LIGHTBLUE_EX + '\n\n\nThe script has run successfully and created the following:')
 print(Fore.LIGHTYELLOW_EX + '\n1 x Map Output File (png format)')
 print('\n1 x Text File (txt format)')
@@ -370,6 +374,8 @@ print('\n1 x Data Table (xlsx format)')
 if Selected_ASSI != " an ASSI":
     print('\n3 x Spatial File Outputs (shp format)')
 else:
-    print('\n2 x Spatial File Outputs (shp format\n\n\n\n)')  # "an ASSI" is now Benburb
-    # the current value if the user input 'ALL' at the start
+    print('\n2 x Spatial File Outputs (shp format\n\n\n\n)')
 print("\n\n\n ")
+
+# End of script
+
