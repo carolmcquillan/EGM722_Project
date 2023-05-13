@@ -115,7 +115,23 @@ if Selected_ASSI == 'All':
 else:  # or (depending on the user input)
     ASSI = ASSI.loc[ASSI['NAME'] == Selected_ASSI]  # ASSI gdf now only contains row of the selected ASSI
 
-# Step 4: Work with the Agricultural Field and Livestock data
+
+# Step 4: Buffering ASSI(s)
+# Here we are Undertaking initial spatial analysis to create a buffer of the selected ASSI(s)
+# we'll be buffering by the user defined  distance from above
+ASSI_buffer = ASSI.copy()                                   # first, made a copy of the current ASSI gdf
+                                                            # (this may be 1 feature or all-depending on user's choice)
+ASSI_buffer.geometry = ASSI.geometry.buffer(
+    Dist_m_int)  # This is where a buffer of the ASSI(s) is created.  It is based upon the user selected Buffer Distance
+ASSI_buffer_dis = ASSI_buffer.dissolve()                    # This dissolves the features in the ASSI_buffer gdf
+                                                            # to create new 'ASSI_buffer_dis' gdf
+assign_area_length(ASSI_buffer_dis)
+
+print('\nSpatial buffering in progress.....................')
+print('\nDissolving polygons...............................')
+
+
+# Step 5: Work with the Agricultural Field and Livestock data
 # Add first Agricultural Fields dataset(this includes Field ID's and geometry)
 AgFields = gpd.read_file(
     os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project/data_files/AgFields.shp'))  # add Agricultural fields data
@@ -135,17 +151,6 @@ AgFields = AgFields.merge(FieldInfo, on='FieldID', how='left')
 AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1)  # drop unneeded columns
 print('\nJoining data.....................')
 
-# Step 5: Buffering ASSI(s)
-# Here we are Undertaking initial spatial analysis to create a buffer of the selected ASSI(s)
-# we'll be buffering by the user defined  distance from above
-ASSI_buffer = ASSI.copy()                                   # first, made a copy of the current ASSI gdf
-                                                            # (this may be 1 feature or all-depending on user's choice)
-ASSI_buffer.geometry = ASSI.geometry.buffer(
-    Dist_m_int)  # This is where a buffer of the ASSI(s) is created.  It is based upon the user selected Buffer Distance
-ASSI_buffer_dis = ASSI_buffer.dissolve()                    # This dissolves the features in the ASSI_buffer gdf
-                                                            # to create new 'ASSI_buffer_dis' gdf
-print('\nSpatial buffering in progress.....................')
-print('\nDissolving polygons...............................')
 
 # Step 6: Performing spatial join on Fields and ASSI(s)
 # by overlaying agricultural fields with the dissolved buffer to spatially join the records
