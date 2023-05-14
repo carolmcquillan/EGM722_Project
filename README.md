@@ -2,6 +2,7 @@
 README: Project for EGM722: Field Identifier  
 
 How to run the script successfully
+
 In addition to a GitHub account, you will need to have git, conda, and python (version 3.11.3) installed on your machine, to run the script.  
 
 1. Download the required files 
