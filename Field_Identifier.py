@@ -62,13 +62,14 @@ def scale_bar2(ax, location=(0.99, 0.035)):
 # First ask for user to input ASSI name to be investigated
 
 Selected_ASSI = input(Fore.LIGHTGREEN_EX + "\n\nEnter the name of ASSI to investigate, "
-                                           "or enter \'All\' for a Northern Ireland level overview:")
+                                           "or enter \'All\' for a Northern Ireland level overview.\n"
+                                     "You can refer to the appendix in the user guide, for a full list of ASSI names:")
 # TODO: Work with ASSI Name in lower case
 
 
 # To check a valid value has been input, first add the geodataframe need to perform this check
 ASSI = gpd.read_file(os.path.abspath('c:/Carol_PG_CERT_GIS/EGM722_Project//data_files/ASSI.shp')).to_crs(epsg=2157)
-ASSI.to_excel("ASSI.xlsx")
+
 # Check and give user 3 attempts to make valid input
 count = 0
 while count < 2:
@@ -80,23 +81,24 @@ while count < 2:
             print(Fore.RED + '\nThis is an invalid choice. Please try again......')
             Selected_ASSI = input(
                 Fore.LIGHTGREEN_EX + "Enter the name of ASSI to investigate, "
-                                     "or enter \'All\' for a Northern Ireland level overview:")
+                                     "or enter \'All\' for a Northern Ireland level overview.\n"
+                                     "You can refer to the appendix in the user guide, for a full list of ASSI names:")
             count += 1
     except ValueError:
         print(Fore.LIGHTGREEN_EX + "Only text input allowed")
 
 if count == 2: print(Fore.RED + '\n\n\n\nProgramme quitting due to invalid user input.............................'
-                     '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'); os._exit(0)
+                     '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'+Fore.LIGHTWHITE_EX); os._exit(0)
 
 # Step 2: Ask for user to define the buffer distance
 Dist_km_str = input(
-    Fore.LIGHTGREEN_EX + "\n\nSpecify a buffer distance in kilometers (no decimals or commas permitted):")
+    Fore.LIGHTGREEN_EX + "\n\nSpecify a buffer distance in kilometers (Numbers only, no decimals, negative numbers or commas permitted):")
 # TODO: Verify user input is a keyboard number and give 3 chances for valid input
 Dist_km_int = int(Dist_km_str)
 Dist_m_int = Dist_km_int * 1000
 
 # Provide user  update
-print(Fore.LIGHTWHITE_EX + '\n\nCreating a {} km buffer around {}'.format(Dist_km_str, Selected_ASSI))
+print(Fore.LIGHTWHITE_EX + '\n\nInvestigating fields within/ partially within a {} km buffer of {}\n\n'.format(Dist_km_str, Selected_ASSI))
 
 # Step 3: Work with tht ASSI data - Now, we're working with the ASSI data which was added above:
 assign_area_length(ASSI)  # first, apply this user created function to assign length and area to gdf
@@ -127,7 +129,7 @@ ASSI_buffer_dis = ASSI_buffer.dissolve()                    # This dissolves the
                                                             # to create new 'ASSI_buffer_dis' gdf
 assign_area_length(ASSI_buffer_dis)
 
-print('\nSpatial buffering in progress.....................')
+print(Fore.LIGHTBLACK_EX +'\nSpatial buffering in progress.....................')
 print('\nDissolving polygons...............................')
 
 
@@ -149,7 +151,7 @@ FieldInfo = pd.read_excel(
 # Now joining FieldInfo (pandas dataframe) onto the AgFields(geopandas dataframe)
 AgFields = AgFields.merge(FieldInfo, on='FieldID', how='left')
 AgFields = AgFields.drop(['X_COORD', 'Y_COORD'], axis=1)  # drop unneeded columns
-print('\nJoining data.....................')
+print('\nJoining data......................................')
 
 
 # Step 6: Performing spatial join on Fields and ASSI(s)
@@ -167,7 +169,7 @@ ax = plt.axes(
     projection=myCRS)  # creating axes object in the figure (within which data shall be plotted), using predefined crs
 
 # first, we set the map extent:
-xmin, ymin, xmax, ymax = ASSI.total_bounds  # Bounding co-ords of the ASSI dataset are set against the axes extent
+xmin, ymin, xmax, ymax = FieldsInBuf.total_bounds  # Bounding co-ords of the ASSI dataset are set against the axes extent
 if Selected_ASSI != 'All':  # The axes extent will vary, depending upon whether the user chose to investigate
     mapExtent = ax.set_extent(  # a single ASSI or all.
         [xmin - Dist_m_int - 2500, xmax + Dist_m_int + 2500, ymin - Dist_m_int - 2500, ymax + Dist_m_int + 2500],
@@ -280,8 +282,8 @@ else:  # or
     OutputName = "ALL_ASSI" + str(Dist_km_int) + "km"  # "ALL_ASSI" to create the prefix name for 'All ASSI' outputs
 
 # Now we're applying the naming convention from above to save the map:
-myFig.savefig(OutputName + '_map.png', dpi=300, bbox_inches='tight')
-print('\nExporting output map to ............' + str(OutputName) + '_map.png')
+myFig.savefig(OutputName + '_Map.png', dpi=300, bbox_inches='tight')
+print('\nExporting output map to ..........................' + str(OutputName) + '_Map.png')
 
 # Step 8: Exporting Field records to excel
 # Dropping fields that are not required before, exporting to Excel
@@ -290,7 +292,7 @@ xlsx_FieldOutput = FieldsInBuf.drop(['geometry', 'index_right', 'OBJECTID', 'REF
 xlsx_FieldOutput = xlsx_FieldOutput.rename(columns={'Area_km2_left': 'Area_km2', 'Length_m_left': 'Length_m'})
 xlsx_FieldOutput.to_excel(
     OutputName + "_Fields.xlsx")  # exports the features to an Excel file for future use (if required)
-print('\nExporting Field records to..........' + str(OutputName) + "_Fields.xlsx")    # this informs the user on-screen
+print('\nExporting field records to........................' + str(OutputName) + "_Fields.xlsx")    # this informs the user on-screen
                                                                               # that we're saving field records to Excel
 
 # Step 9: Creating Descriptive statistics to export to text file
@@ -329,7 +331,7 @@ else:
     pass
 
 # Next, we let the user know that we are going to export Field and Animal stats to a results text file
-print('\nExporting Descriptive Statistical data to..........' + str(OutputName) + "_Results.txt")
+print('\nExporting descriptive statistical data to.........' + str(OutputName) + "_Results.txt")
 
 # and now export the results to the text file
 with open(OutputName + "_Results.txt", "a") as f:
@@ -366,30 +368,30 @@ with open(OutputName + "_Results.txt", "a") as f:
 # TODO: Add Summary ASSI data eg area to the above output
 
 #Step 10: Exporting geodataframes to shapefiles
-#Next, we let the user know that we are going to export various datasets to shapefile
-ASSI_buffer.to_file(OutputName + "_Buffer.shp")
-print('\nExporting shapefile to..........' + str(OutputName) + "_Buffer.shp")
-
-FieldsInBuf.to_file(OutputName + "_Fields.shp")
-print('\nExporting shapefile to..........' + str(OutputName) + "_Fields.shp")
+#Next, we let the user know that we are exporting various datasets to shapefile
 
 if Selected_ASSI == ' an ASSI':                      # this section ensures we don't create a shp containing all ASSI's
     pass
 else:
     ASSI.to_file(ASSICode + '_' + Selected_ASSI + "_ASSI.shp")
-    print("\nExporting shapefile to.........." + ASSICode + '_' + Selected_ASSI + "_ASSI.shp")
+    print("\nExporting shapefile to............................" + ASSICode + '_' + Selected_ASSI + "_ASSI.shp")
 
+ASSI_buffer.to_file(OutputName + "_Buffer.shp")
+print('\nExporting shapefile to............................' + str(OutputName) + "_Buffer.shp\n")
+
+FieldsInBuf.to_file(OutputName + "_Fields.shp")
+print('\nExporting shapefile to............................' + str(OutputName) + "_Fields.shp")
 
 # Here the users receives a final summary message on screen
 print(Fore.LIGHTBLUE_EX + '\n\n\nThe script has run successfully and created the following:')
-print(Fore.LIGHTYELLOW_EX + '\n1 x Map Output File (png format)')
+print(Fore.LIGHTWHITE_EX + '\n1 x Map Output File (png format)')
 print('\n1 x Text File (txt format)')
 print('\n1 x Data Table (xlsx format)')
 
 if Selected_ASSI != " an ASSI":
     print('\n3 x Spatial File Outputs (shp format)')
 else:
-    print('\n2 x Spatial File Outputs (shp format\n\n\n\n)')
+    print('\n2 x Spatial File Outputs (shp format)\n\n\n\n')
 print("\n\n\n ")
 
 # End of script
