@@ -6,6 +6,7 @@ dependencies:
   - python= 3.11.3
   - cartopy>=0.21
   - geopandas
+  - matplotlib_scalebar
   - os
   - notebook
   - pandas
