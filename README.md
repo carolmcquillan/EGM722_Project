@@ -25,7 +25,7 @@ You will run the script using python from the anaconda prompt.  Open the prompt 
 so enter:                           conda activate  722Assignment_Carol   
 Then to run the script, enter:    	ipython Field_Identifier.py
 
-The script should execute and run successfully. Fr Trouble shooting or more information, please refer to the user guide.     
+The script should execute and run successfully. For Trouble shooting or more information, please refer to the user guide.     
 
 
 
