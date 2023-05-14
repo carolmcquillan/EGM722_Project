@@ -22,12 +22,23 @@ myCRS = ccrs.epsg(2157)
 # This "assign_Area_Length" function assigns area in km2 and length in meters to any geodataframe
 
 def assign_area_length(gdf):
-    for ind, row in gdf.iterrows():  # iterate over each row in the GeoDataFrame
-        gdf.loc[ind, 'Area_km2'] = row[
-                                       'geometry'].area / 1000000  # assign the row's geometry length to a new column
-    for ind, row in gdf.iterrows():  # iterate over each row in the GeoDataFrame
-        gdf.loc[ind, 'Length_m'] = row['geometry'].length  # assign the row's geometry length to a new column, Length
+    for ind, row in gdf.iterrows():                                # iterate over each row in the GeoDataFrame
+        gdf.loc[ind, 'Area_km2'] = row['geometry'].area / 1000000  # assign the row's geometry area to a new column
+    for ind, row in gdf.iterrows():                                # iterate over each row in the GeoDataFrame
+        gdf.loc[ind, 'Length_m'] = row['geometry'].length          # assign the row's geometry length to a new column
+    '''Fetches rows a geodataframe.
 
+    Using the index, iterates over rows and assigns both new area and length variables to the row
+    
+    Args:
+        gdf: An geodataframe
+        
+    Returns:
+    Area and length values to the geodataframe features
+
+    Raises:
+        NameError: An error occurred accessing the geodataframe.
+    '''
 
 # This scale_bar function adds a scale bar to the output map:
 def scale_bar1():
@@ -36,7 +47,17 @@ def scale_bar1():
     distance_meters = points[0].distance(points[1])             #  the distance between the 2 point above
                                                                 # which will be used to generate the scale bar
     ax.add_artist(ScaleBar(distance_meters, box_color="none", location="lower right"))
+    '''Creates a scale bar for local level maps.
+       The zoom level of the local maps produced here, varies dependent upon the size of the ASSI and the size of the
+       buffer.  This function creates a scale bar that is appropriate to the zoom level.
 
+        Args:
+            non required- this may therefore not strictly qualify as a function.
+
+        Returns:
+        A scale bar which matches the zoom extent
+
+        '''
 
 def scale_bar2(ax, location=(0.99, 0.035)):
     x0, x1, y0, y1 = ax.get_extent()
@@ -55,6 +76,20 @@ def scale_bar2(ax, location=(0.99, 0.035)):
     ax.text(sbx - 22000, sby - 4500, '10', transform=ax.projection, fontsize=6)  # so numbers have been placed
     ax.text(sbx - 26500, sby - 4500, '5', transform=ax.projection, fontsize=6)  # in best display positions
     ax.text(sbx - 32000, sby - 4500, '0', transform=ax.projection, fontsize=6)
+    '''Creates a scale bar for Northern Ireland level maps.
+       The fixed zoom extent for N.I. level maps, lends itself well to producing a more ornate scalebar.
+       This function creates a black and white scale bar, with a standard 30km length.  
+
+       Args:
+            ax = the name of the axis to apply the scale bar to.
+            location = script has set the standard location for the scale bar to the lower right corner of the map.
+
+       Returns:
+       A scale bar which matches the NI map extent
+
+       '''
+
+
 
 # The steps referred to in the script from here on in, correspond to the steps set out in the User Guide
 # STEP 1:
@@ -91,9 +126,11 @@ if count == 2: print(Fore.RED + '\n\n\n\nProgramme quitting due to invalid user 
                      '\n\nPlease refer to the user guide to help identify a valid ASSI name for input.'+Fore.LIGHTWHITE_EX); os._exit(0)
 
 # Step 2: Ask for user to define the buffer distance
+
 Dist_km_str = input(
     Fore.LIGHTGREEN_EX + "\n\nSpecify a buffer distance in kilometers (Numbers only, no decimals, negative numbers or commas permitted):")
 # TODO: Verify user input is a keyboard number and give 3 chances for valid input
+
 Dist_km_int = int(Dist_km_str)
 Dist_m_int = Dist_km_int * 1000
 
