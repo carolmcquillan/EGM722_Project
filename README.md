@@ -1,36 +1,34 @@
-# EGM722_Project
-Repo for EGM722 Programming project
 
-#Brief introduction to the repository - what it is, how to get started with it, and so on.**
-#To be tailored,,,,,,
-READMEFILE: Ulster_AEC Script: How-To Guide
+README: Project for EGM722: Field Identifier  
 
-Introduction
+How to run the script successfully
+In addition to a GitHub account, you will need to have git, conda, and python (version 3.11.3) installed on your machine, to run the script.  
 
-This Python script uses external modules including Geopandas, Cartopy and Matplotlib to plot a map of flooding in Lower Lough Erne in Country Fermanagh, Northern Ireland. Numpy, Pandas and Geopandas are used to perform spatial operations including converting to different projections, calculating area of polygons, and selecting geometries from one shapefile based on the geometry of another. The script runs on Python 3.8.
-Since the API has been developed with specific test data, it is necessary to clone the Ulster_AEC GitHub repository to your computer so that the data files are available for the programme to use.
+1. Download the required files 
 
-Running Ulster_AEC’s script
+Make a clone of and download the following github repository:  carolmcquillan/EGM722_Project: Repo for EGM722 Programming project.  You should now have the requisite script, environment file and all sample datasets required on your machine.  
 
-The script’s dependencies are GeoPandas, Pandas, Cartopy, Matplotlib, Numpy, Pandas and OS. These can be accessed by cloning the Ulster_AEC environment on your local machine. 
-To clone the repository and reproduce the environment for the script to run, you need to install on your computer: 
-•	Git (https://git-scm.com/downloads) 
-•	Conda (https://docs.anaconda.com/anaconda/install/) 
-Then, you need to clone the below repository to your computer using Git:
-•	GitHub repository: https://github.com/AnnaQueenOfScots/Ulster_AEC
-Once cloned, to duplicate the necessary environment for the project in Anaconda:
-•	Use the environment.yml file which should now be on your local machine. 
-This should enable you to run the script in Python 3.8 with all dependencies working. The gitignore file was created for PyCharm so that IDE is recommended. The data_files folder on your local machine should contain seven shapefiles (.shp) and their related files (e.g. .shx, .dbf, .prj).
+2. Create a conda environment
 
-This repository contains:
-A python script: script.py
-A folder containing six shapefiles: data_files 
-An MIT licence file: LICENCE
-A gitignore file: .gitignore
-An environment file: Ulster_AEC.yml 
+You will next need to use the environment (.yml) file in the repo to create the conda environment.  This can be done using Anaconda Navigator, by using the Import button on the Environments tab.
+Alternatively, you can use the anaconda prompt.  From the open prompt, first navigate to the local repository and run the following command:    C:\Users\username>conda env create -f environment.yml 
+The dependencies are listed here: python 3.11.3, cartopy, geopandas, os, notebook, pandas, pyepsg and openpyxl.  
 
-Troubleshooting Advice
-•	Make sure shapefiles have all their related files in the data_files folder- at least .shp (feature geometry), .shx (index of feature geometry), .dbf (attribute information) and .prj (projection information) (see next point) are necessary for them to be opened by GeoPandas (Autodesk Support, 2014). These files are included in the test data.  
-•	Projection Information: Make sure a Coordinate Reference System (projection) is specified for shapefiles. Naïve files- those with no spatial reference system- cannot be reprojected with cartopy. A GIS such as QGIS can project naïve files if necessary. 
-•	For help with functions, use the help() method.  
-•	If GeoPandas is not recognised, ensure your IDE is set to read the Ulster_AEC script. This might involve changing environments in Conda or configuring interpreter settings in PyCharm or other IDE. 
+3. Edit the data paths
+
+The repository includes four datasets used by the script.  D=More detail is provided in the user guide. You will need to edit the script (using either notepad/notepad ++/an IDE of choice), to ensure the correct paths are provided to these datasets.  Simply search �c:\�  to find for references to any data paths and replace these references with the path to where you have stored the files on your local machine. 
+
+4. Run the script
+
+You will run the script using python from the anaconda prompt.  Open the prompt window is open, navigate to the directory where you have stored your file and activate the appropriate environment, using the conda activate command.  The environment is called 722Assignment_Carol, 
+
+so enter:                           conda activate  722Assignment_Carol   
+Then to run the script, enter:    	ipython Field_Identifier.py
+
+The script should execute and run successfully. Fr Trouble shooting or more information, please refer to the user guide.     
+
+
+
+
+
+
